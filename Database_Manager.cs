@@ -24,7 +24,6 @@ class Database_Manager
             Console.WriteLine(ex.Message);
         }
 
-        
 
         void SelectExample(MySqlConnection conn)
         {
