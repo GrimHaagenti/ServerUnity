@@ -7,7 +7,7 @@ using MySql.Data.MySqlClient;
 
 class Database_Manager
 {
-    static void Main(string[] args) 
+    static void Db_Main(string[] args) 
     {
         //String con parametros de conexión
         const string connectionString = "Server=db4free.net;Port=3306;database=enti_test_db;Uid=ismael_rivero;password=;SSL Mode=None;connect timeout=3600;default command timeout=3600;";
