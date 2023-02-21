@@ -9,11 +9,25 @@ class Database_Manager
 {
     private MySqlConnection conn;
 
-    public static Database_Manager _DB_MANAGER;
+    /*public static Database_Manager _DB_MANAGER = null;
+
+    public void InitDB()
+    {
+        if (_DB_MANAGER == null)
+        {
+            _DB_MANAGER = new Database_Manager();
+        }
+        else
+        {
+            _DB_MANAGER = this;
+            
+        }
+    }
+    */
 
     public void StartDatabaseService() {
         //String con parametros de conexión
-        const string connectionString = "Server=db4free.net;Port=3306;database=enti_test_db;Uid=ismael_rivero;password=;SSL Mode=None;connect timeout=3600;default command timeout=3600;";
+        const string connectionString = "Server=db4free.net;Port=3306;database=enti_test_db;Uid=ismael_rivero;password=warrior000;SSL Mode=None;connect timeout=3600;default command timeout=3600;";
 
         //Instancio clase MySQL
         conn = new MySqlConnection(connectionString);
@@ -29,24 +43,80 @@ class Database_Manager
         //conn.Close();
     }
 
-        void SelectExample(MySqlConnection conn)
-        {
+
+    public void DataSelect(DataType type, string query)
+    {
+        try {
+            conn.Open();
+
             MySqlDataReader reader;
             MySqlCommand cmd = conn.CreateCommand();
-            cmd.CommandText= "Select * from characters";
+            cmd.CommandText = query;
             try
             {
                 reader = cmd.ExecuteReader();
                 while (reader.Read())
                 {
-                    Console.WriteLine(reader.GetString(0));
-                    Console.WriteLine(reader.GetString(1));
+                    switch (type)
+                    {
+                        /// USERDATA
+                        /// Login
+                        /// If only one row GOOD
+                        case DataType.USERDATA:
+                            break;
+
+                        /// GAMEDATA
+                        /// Retrieve data for races
+                        /// 6 rows
+                        case DataType.GAMEDATA:
+                            Console.WriteLine(reader.GetString(0));
+                            Console.WriteLine(reader.GetString(1));
+                            Console.WriteLine(reader.GetString(2));
+                            Console.WriteLine(reader.GetString(3));
+                            Console.WriteLine(reader.GetString(4));
+                            Console.WriteLine(reader.GetString(5));
+                            break;
+
+                        /// CHARACTERDATA
+                        /// Retrieve user's characters
+                        case DataType.CHARACTERDATA:
+                            Console.WriteLine(reader.GetString(0));
+                            Console.WriteLine(reader.GetString(1));
+                            Console.WriteLine(reader.GetString(2));
+                            Console.WriteLine(reader.GetString(3));
+                            break;
+
+                        /// VERSION
+                        /// Check version
+                        case DataType.VERSION:
+                            Console.WriteLine(reader.GetDecimal(0));
+                            break;
+                        default:
+                            break;
+                    }
                 }
             }
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
             }
+
+            conn.Close();
+        }
+        catch (Exception ex)
+        { 
+            Console.WriteLine(ex.Message); 
+        }
+
+
+
+
+    }
+
+
+    void Select(MySqlConnection conn)
+        {
+            
 
         }
        

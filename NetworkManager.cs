@@ -18,6 +18,10 @@ public class NetworkManager
     private int lastTimePing;
     private List<Client> disconnectClients;
 
+    /// DATABASE HERE ///
+    Database_Manager database_manager = new Database_Manager();
+
+
     public NetworkManager() 
     {
         //Lista para almacenar clientes
@@ -41,6 +45,11 @@ public class NetworkManager
         {
             this.serverListener.Start();
             StartListening();
+
+
+            //DATABASE START
+            database_manager.StartDatabaseService();
+
         }
         catch (Exception ex)
         {
@@ -100,7 +109,8 @@ public class NetworkManager
     {
         string[] parameters = data.Split('/');
 
-        switch(parameters[0])
+        Console.WriteLine(parameters[0]);
+        switch (parameters[0])
         {
             //Login 
             case "0":
@@ -119,7 +129,7 @@ public class NetworkManager
 
             //GetData
             case "3":
-                //GetData
+                GetGameData();
                 break;
   
             //Version Control
@@ -128,6 +138,19 @@ public class NetworkManager
                 break;
 
         }
+    }
+
+    public void GetGameData() 
+    {
+        //GET GAME DATA FROM SQL SERVER
+        string query = "SELECT * FROM races";
+
+        database_manager.DataSelect(DataType.GAMEDATA, query);
+
+        query = "SELECT * FROM versions";
+
+        database_manager.DataSelect(DataType.VERSION, query );
+
     }
 
     public void Login(string username, string password)
