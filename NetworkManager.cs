@@ -30,6 +30,8 @@ public class NetworkManager
 
 
         this.lastTimePing = Environment.TickCount;
+        
+        // Lista para clientes por eliminar
         this.disconnectClients= new List<Client>();
     }
 
@@ -100,16 +102,40 @@ public class NetworkManager
 
         switch(parameters[0])
         {
+            //Login 
             case "0":
                 Login(parameters[1], parameters[2]);
                 break;
+
+            // Ping
             case "1":
                 ReceivePing(client);
                 break;
+
+            //Register
+            case "2":
+                Register(parameters[1], parameters[2]);
+                break;
+
+            //GetData
+            case "3":
+                //GetData
+                break;
+  
+            //Version Control
+            case "4":
+                ReceivePing(client);
+                break;
+
         }
     }
 
     public void Login(string username, string password)
+    {
+        Console.WriteLine(username+ ":" + password);
+    }
+
+    public void Register(string username, string password)
     {
         Console.WriteLine(username+ ":" + password);
     }

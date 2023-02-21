@@ -13,6 +13,7 @@ class Server
 
         //Instancio los servicios de red del servidor
         NetworkManager network_service = new NetworkManager();
+        Database_Manager database_manager = Database_Manager._DB_MANAGER;
 
         //Empiezo los servicios del servidor
         StartService();
@@ -20,9 +21,14 @@ class Server
         //Mientras sea TRUE el servidor se mantiene PRENDÍO
         while (bServerOn)
         {
+
+            //Network Service
             network_service.CheckConnection();
             network_service.CheckMessage();
             network_service.DisconnectClients();
+
+            //Database Services
+
         }
 
 
@@ -31,6 +37,8 @@ class Server
 
             //Servicios de red
             network_service.StartNetworkService();
+            //Servicio de base de Datos
+            database_manager.StartDatabaseService();
         }
 
     }
