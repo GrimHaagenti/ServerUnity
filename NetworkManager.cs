@@ -105,11 +105,13 @@ public class NetworkManager
         clientListMutex.ReleaseMutex();
     }
 
+    
+
     public void ManageData(Client client, string data)
     {
         string[] parameters = data.Split('/');
 
-        Console.WriteLine(parameters[0]);
+        Console.WriteLine("Data entering with parameter: "+ parameters[0]);
         switch (parameters[0])
         {
             //Login 
@@ -129,27 +131,53 @@ public class NetworkManager
 
             //GetData
             case "3":
-                GetGameData();
+                GetGameData(client);
                 break;
   
             //Version Control
             case "4":
-                ReceivePing(client);
+                GetVersion(client);
                 break;
 
         }
     }
+    void GetVersion(Client client)
+    {
 
-    public void GetGameData() 
+        try
+        {
+            string version = database_manager.GetLatestVersion();
+
+            StreamWriter writer = new StreamWriter(client.GetTcpClient().GetStream());
+            writer.WriteLine("4" + "/" +version);
+            writer.Flush();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Error: " + ex.Message + "con el cliente: " + client.GetNick());
+            throw;
+        }
+
+        
+    }
+    public void GetGameData(Client client) 
     {
         //GET GAME DATA FROM SQL SERVER
-        string query = "SELECT * FROM races";
 
-        database_manager.DataSelect(DataType.GAMEDATA, query);
+        try
+        {
+            string data = database_manager.GetGameData();
 
-        query = "SELECT * FROM versions";
+            StreamWriter writer = new StreamWriter(client.GetTcpClient().GetStream());
+            writer.WriteLine("3" + "/" + data);
+            writer.Flush();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Error: " + ex.Message + "con el cliente: " + client.GetNick());
+            throw;
+        }
 
-        database_manager.DataSelect(DataType.VERSION, query );
 
     }
 
@@ -195,6 +223,7 @@ public class NetworkManager
 
     private void ReceivePing(Client client)
     {
+        Console.WriteLine("Received Ping from: " + client.GetNick);
         client.SetWaitingPing(false);
     }
 
@@ -202,8 +231,10 @@ public class NetworkManager
     {
         try
         {
+            Console.WriteLine("Sending Ping to: " + client.GetNick);
+
             StreamWriter writer = new StreamWriter(client.GetTcpClient().GetStream());
-            writer.WriteLine("Ping");
+            writer.WriteLine("1" + "/");
 
             writer.Flush();
             client.SetWaitingPing(true);

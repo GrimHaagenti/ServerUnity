@@ -42,16 +42,31 @@ class Database_Manager
         //}
         //conn.Close();
     }
-
-
-    public void DataSelect(DataType type, string query)
+    public string GetLatestVersion()
     {
+        string query = "SELECT * FROM versions";
+        return  DataSelect(DataType.VERSION, query);
+        
+    }
+    public string GetGameData()
+    {
+        string query = "SELECT * FROM races";
+        return DataSelect(DataType.GAMEDATA, query);
+        
+    }
+
+
+    public string DataSelect(DataType type, string query)
+    {
+        string result = "";
+        
         try {
             conn.Open();
 
             MySqlDataReader reader;
             MySqlCommand cmd = conn.CreateCommand();
             cmd.CommandText = query;
+
             try
             {
                 reader = cmd.ExecuteReader();
@@ -69,12 +84,14 @@ class Database_Manager
                         /// Retrieve data for races
                         /// 6 rows
                         case DataType.GAMEDATA:
-                            Console.WriteLine(reader.GetString(0));
-                            Console.WriteLine(reader.GetString(1));
-                            Console.WriteLine(reader.GetString(2));
-                            Console.WriteLine(reader.GetString(3));
-                            Console.WriteLine(reader.GetString(4));
-                            Console.WriteLine(reader.GetString(5));
+
+                            result += reader.GetString(0) + ".";
+                            result += reader.GetString(1) + ".";
+                            result += reader.GetString(2) + ".";
+                            result += reader.GetString(3) + ".";
+                            result += reader.GetString(4) + ".";
+                            result += reader.GetString(5) + "-";
+
                             break;
 
                         /// CHARACTERDATA
@@ -89,7 +106,7 @@ class Database_Manager
                         /// VERSION
                         /// Check version
                         case DataType.VERSION:
-                            Console.WriteLine(reader.GetDecimal(0));
+                            result += reader.GetString(0).ToString() ;
                             break;
                         default:
                             break;
@@ -102,13 +119,15 @@ class Database_Manager
             }
 
             conn.Close();
+            return result;
         }
         catch (Exception ex)
         { 
             Console.WriteLine(ex.Message); 
+            
         }
 
-
+        return result;
 
 
     }
