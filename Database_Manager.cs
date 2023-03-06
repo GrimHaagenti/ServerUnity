@@ -1,29 +1,34 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Data;
+using System.Data.Common;
 using System.Linq;
+using System.Net.Http.Headers;
+using System.Reflection.PortableExecutable;
 using System.Text;
 using System.Threading.Tasks;
 using MySql.Data.MySqlClient;
+using Mysqlx.Session;
+using MySqlX.XDevAPI.Common;
 
 class Database_Manager
 {
     private MySqlConnection conn;
 
-    /*public static Database_Manager _DB_MANAGER = null;
+    private static Database_Manager _DB_MANAGER = null;
 
-    public void InitDB()
+    static public Database_Manager DB_MANAGER()
     {
         if (_DB_MANAGER == null)
         {
             _DB_MANAGER = new Database_Manager();
+            _DB_MANAGER.StartDatabaseService();
         }
-        else
-        {
-            _DB_MANAGER = this;
-            
-        }
+       
+        return _DB_MANAGER;
     }
-    */
+    
 
     public void StartDatabaseService() {
         //String con parametros de conexión
@@ -32,15 +37,6 @@ class Database_Manager
         //Instancio clase MySQL
         conn = new MySqlConnection(connectionString);
 
-        //try
-        //{
-        //    conn.Open();
-        //}
-        //catch (Exception ex)
-        //{
-        //    Console.WriteLine(ex.Message);
-        //}
-        //conn.Close();
     }
     public string GetLatestVersion()
     {
@@ -54,7 +50,11 @@ class Database_Manager
         return DataSelect(DataType.GAMEDATA, query);
         
     }
-
+    public string GetPlayerCharacters(int playerID)
+    {
+        string query = "SELECT * FROM characters WHERE owner_id=" + playerID + ";";
+        return DataSelect(DataType.CHARACTERDATA, query);
+    }
 
     public string DataSelect(DataType type, string query)
     {
@@ -74,9 +74,7 @@ class Database_Manager
                 {
                     switch (type)
                     {
-                        /// USERDATA
-                        /// Login
-                        /// If only one row GOOD
+                        /// player id, username and password
                         case DataType.USERDATA:
                             break;
 
@@ -97,10 +95,10 @@ class Database_Manager
                         /// CHARACTERDATA
                         /// Retrieve user's characters
                         case DataType.CHARACTERDATA:
-                            Console.WriteLine(reader.GetString(0));
-                            Console.WriteLine(reader.GetString(1));
-                            Console.WriteLine(reader.GetString(2));
-                            Console.WriteLine(reader.GetString(3));
+                            result += reader.GetString(0) + ".";
+                            result += reader.GetString(1) + ".";
+                            result += reader.GetString(2) + ".";
+                            result += reader.GetString(3) + "-";
                             break;
 
                         /// VERSION
@@ -132,32 +130,106 @@ class Database_Manager
 
     }
 
+    public int GetUserId(string name, string password)
+    {
+        conn.Open();
+        string query = "SELECT id_player FROM players WHERE username='" + name + "' AND u_password='"+ password+ "';";
+        MySqlCommand cmd = conn.CreateCommand();
+        cmd.CommandText = query;
+        MySqlDataReader dataReader = cmd.ExecuteReader();
 
-    void Select(MySqlConnection conn)
+
+        while (dataReader.Read())
         {
+            int id = dataReader.GetInt32(0);
+            Console.WriteLine(id);
+
+            conn.Close();
+            return id;
+
+
+        }
+        conn.Close();
+        return -1;
+    }
+    private int GetUserId(string name)
+    {
+        string query = "SELECT id_player FROM players WHERE username='" +name+"';";
+        MySqlCommand cmd = conn.CreateCommand();
+        cmd.CommandText = query;
+        MySqlDataReader dataReader = cmd.ExecuteReader();
+        
+
+        while (dataReader.Read())
+        {
+            int id = dataReader.GetInt32(0);
+            Console.WriteLine(id);
+            return id;
             
 
         }
-       
+        return -1;
+    }
 
+    public int  InsertUserData(string username, string password)
+    {
+        string[] playerData = new string[2];
+        playerData[0] = username;
+        playerData[1] = password;
+        return DataInsert(DataType.USERDATA, playerData);
+    }
 
-        void InsertExample(MySqlConnection conn)
+    public int DataInsert(DataType dataType, string[] values)
+    {
+        int lastInsertID = -1;
+        try
         {
+            conn.Open();
+
             MySqlCommand cmd = conn.CreateCommand();
-            cmd.CommandText = "INSERT INTO characters(name,speed, maxHp, dmg) VALUES ('PEdro la Piedra', 1, 20,20);";
 
-            try
-            {
-                cmd.ExecuteNonQuery();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
+            string query = "INSERT INTO ";
+                    switch (dataType)
+                    {
+                        /// USERDATA
+                        /// Login
+                        /// If only one row GOOD
+                        case DataType.USERDATA:
+                            query += "players(username, u_password) VALUES( '";
+                            query += values[0] + "', '";
+                            query += values[1] + "');";
 
-                throw;
-            }
+                            cmd.CommandText = query;
+                            cmd.ExecuteNonQuery();
+
+                            lastInsertID = GetUserId(values[0]);
+                            break;
+
+                  
+                        /// CHARACTERDATA
+                        /// Retrieve user's characters
+                        case DataType.CHARACTERDATA:
+                            
+                            query += " characters(character_name, chara_race, owner_id) VALUES('";
+                            query += values[1] + "', ";
+                            query += values[0] + ",  ";
+                            query += values[2] + " );";
+                            break;
+
+                        default:
+                            break;
+                    }
+
+
+            conn.Close();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
 
         }
+        return lastInsertID;
+    }
 
         void DeleteExample(MySqlConnection conn)
         {

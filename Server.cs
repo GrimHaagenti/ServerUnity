@@ -14,6 +14,7 @@ class Server
         bool bServerOn = true;
 
         //Instancio los servicios de red del servidor
+        Database_Manager db_Manager = Database_Manager.DB_MANAGER();
         NetworkManager network_service = new NetworkManager();
         
 

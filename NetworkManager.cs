@@ -7,6 +7,7 @@ using System.Net;
 using System.Threading.Tasks;
 using System.Runtime.CompilerServices;
 using System.Net.NetworkInformation;
+using MySqlX.XDevAPI;
 
 public class NetworkManager
 {
@@ -19,7 +20,7 @@ public class NetworkManager
     private List<Client> disconnectClients;
 
     /// DATABASE HERE ///
-    Database_Manager database_manager = new Database_Manager();
+    Database_Manager database_manager = Database_Manager.DB_MANAGER();
 
 
     public NetworkManager() 
@@ -47,8 +48,7 @@ public class NetworkManager
             StartListening();
 
 
-            //DATABASE START
-            database_manager.StartDatabaseService();
+            
 
         }
         catch (Exception ex)
@@ -65,9 +65,10 @@ public class NetworkManager
     private void AcceptConnection(IAsyncResult ar)
     {
         Console.WriteLine("Recibo conexión");
-
+        
+        
         TcpListener listener = (TcpListener)ar.AsyncState;
-
+        
         this.clientListMutex.WaitOne();
 
         this.clients.Add(new Client(listener.EndAcceptTcpClient(ar)));
@@ -87,12 +88,12 @@ public class NetworkManager
             //Acceso al stream de datos
             NetworkStream netStream = client.GetTcpClient().GetStream();
 
+            
             //Comprobación si la info esta lista para ser leída
             if (netStream.DataAvailable)
             {
                 StreamReader reader = new StreamReader(netStream, true);
                 string data = reader.ReadLine();
-               
 
                 //Comprobar si hay información
                 if (data != null)
@@ -112,11 +113,13 @@ public class NetworkManager
         string[] parameters = data.Split('/');
 
         Console.WriteLine("Data entering with parameter: "+ parameters[0]);
+        Console.WriteLine(data);
         switch (parameters[0])
         {
             //Login 
             case "0":
-                Login(parameters[1], parameters[2]);
+                Login(client,parameters[1], parameters[2]);
+                
                 break;
 
             // Ping
@@ -126,7 +129,7 @@ public class NetworkManager
 
             //Register
             case "2":
-                Register(parameters[1], parameters[2]);
+                Register(client, parameters[1], parameters[2]);
                 break;
 
             //GetData
@@ -140,6 +143,7 @@ public class NetworkManager
                 break;
 
         }
+
     }
     void GetVersion(Client client)
     {
@@ -181,14 +185,49 @@ public class NetworkManager
 
     }
 
-    public void Login(string username, string password)
+    public void Login(Client client, string username, string password)
     {
-        Console.WriteLine(username+ ":" + password);
+        Console.WriteLine("Loging user with credentials" +username+ ":" + password);
+        try
+        {
+            int registeredUserID = database_manager.GetUserId(username, password);
+
+            StreamWriter writer = new StreamWriter(client.GetTcpClient().GetStream());
+            if (registeredUserID >= 0)
+            {
+                //string playerCharas = database_manager.GetPlayerCharacters(registeredUserID);
+                writer.WriteLine("2" + "/" + 1);
+                writer.Flush();
+            }
+            else
+            {
+                writer.WriteLine("2" + "/" + -1);
+                writer.Flush();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Error: " + ex.Message + "con el cliente: " + client.GetNick());
+            throw;
+        }
     }
 
-    public void Register(string username, string password)
+    public void Register(Client client, string username, string password)
     {
-        Console.WriteLine(username+ ":" + password);
+        Console.WriteLine("Registering User with credentials: "+username+ ":" + password);
+        try
+        {
+            int registeredUserID = database_manager.InsertUserData(username, password);
+
+            StreamWriter writer = new StreamWriter(client.GetTcpClient().GetStream());
+            writer.WriteLine("2" + "/" + registeredUserID);
+            writer.Flush();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Error: " + ex.Message + "con el cliente: " + client.GetNick());
+            throw;
+        }
     }
 
     public void CheckConnection()
@@ -223,7 +262,7 @@ public class NetworkManager
 
     private void ReceivePing(Client client)
     {
-        Console.WriteLine("Received Ping from: " + client.GetNick);
+        Console.WriteLine("Received Ping from: " + client.GetNick());
         client.SetWaitingPing(false);
     }
 
@@ -252,7 +291,7 @@ public class NetworkManager
         foreach(Client client in this.disconnectClients)
         {
 
-            Console.WriteLine("Desconectando Usuarios");
+            Console.WriteLine("Desconectando usuario: " + client.GetNick());
             client.GetTcpClient().Close();
             this.clients.Remove(client);
 
